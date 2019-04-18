@@ -71,16 +71,33 @@ class MainActivity : AppCompatActivity() {
 
         val vibratorService = getSystemService(Context.VIBRATOR_SERVICE ) as Vibrator
 
+        val buttonX:Button = this.findViewById(R.id.disconenct)
+        buttonX.setOnClickListener {
+            sent = "9"
+            getPairedDevices()
+            setUpBroadcastReceiver()
+            //vibratorService.vibrate(500)
+        }
+
+
+
         val buttonV:Button = this.findViewById(R.id.vibrate)
             buttonV.setOnClickListener {
-            vibratorService.vibrate(500)
+                sent = "1"
+                getPairedDevices()
+                setUpBroadcastReceiver()
+                //vibratorService.vibrate(500)
         }
 
         val buttonB:Button = this.findViewById(R.id.beep)
         val tone = ToneGenerator(AudioManager.STREAM_MUSIC, 50)
 
         buttonB.setOnClickListener {
-            tone.startTone(ToneGenerator.TONE_DTMF_C,500)
+            sent = "4"
+            getPairedDevices()
+            setUpBroadcastReceiver()
+
+            //tone.startTone(ToneGenerator.TONE_DTMF_C,500)
         }
 
 
@@ -94,12 +111,20 @@ class MainActivity : AppCompatActivity() {
 
         buttonT.setOnClickListener {
             if (flashLightStatus == false){
-                cameraManager.setTorchMode(cameraId, true)
+                sent = "2"
+                getPairedDevices()
+                setUpBroadcastReceiver()
+
+                //cameraManager.setTorchMode(cameraId, true)
                 flashLightStatus = true
             }
 
             else if (flashLightStatus == true) {
-                cameraManager.setTorchMode(cameraId, false)
+                sent = "3"
+                getPairedDevices()
+                setUpBroadcastReceiver()
+
+                //cameraManager.setTorchMode(cameraId, false)
                 flashLightStatus = false
             }
 
@@ -413,6 +438,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.M)
         override fun run() {
             var socket: BluetoothSocket?
             // Keep listening until exception occurs or a socket is returned
@@ -439,13 +465,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         //manage the Server's end of the conversation on the passed-in socket
+        @RequiresApi(Build.VERSION_CODES.M)
         fun manageConnectedSocket(socket: BluetoothSocket) {
-            var button1 =
+            //var button1 =
             Log.i(TSERVER, "\nManaging the Socket\n")
             val inSt: InputStream
             val nBytes: Int
             val msg = ByteArray(255) //arbitrary size
+            //var flashLightStatus =false
+
             try {
+
                 inSt = socket.inputStream
                 nBytes = inSt.read(msg)
                 Log.i(TSERVER, "\nServer Received $nBytes \n")
@@ -457,17 +487,45 @@ class MainActivity : AppCompatActivity() {
 
 
             try {
+
                 val msgString = msg.toString(Charsets.UTF_8)
                 //val toast = Toast.makeText(applicationContext, "Hello Javatpoint", Toast.LENGTH_LONG)
                 Log.i(TSERVER, "\nServer Received  $nBytes, Bytes:  [$msgString]\n")
                 runOnUiThread { echoMsg("\nReceived $nBytes:  [$msgString]\n") }
-
-            if (msgString == "0") {
-                val vibratorService = getSystemService(Context.VIBRATOR_SERVICE ) as Vibrator
-                vibratorService.vibrate(500)
+                Log.i(TSERVER, msgString[0].toString())
 
 
-            }
+                if (msgString[0].toString() == "1") {
+                    Log.i(TSERVER,msgString  )
+
+                    val vibratorService = getSystemService(Context.VIBRATOR_SERVICE ) as Vibrator
+                    vibratorService.vibrate(500)
+                }
+                else if (msgString[0].toString() == "2") {
+                    val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                    val cameraId = cameraManager.getCameraIdList()[0]
+                    cameraManager.setTorchMode(cameraId, true)
+                }
+
+                else if (msgString[0].toString() == "3") {
+                    val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                    val cameraId = cameraManager.getCameraIdList()[0]
+                    cameraManager.setTorchMode(cameraId, false)
+                }
+
+
+
+                else if (msgString[0].toString() == "4") {
+                    val tone = ToneGenerator(AudioManager.STREAM_MUSIC, 50)
+                    tone.startTone(ToneGenerator.TONE_DTMF_C,500)
+                }
+
+                else if (msgString[0].toString() == "9") {
+                    cancel()
+                }
+
+
+
 
                 //runOnUiThread(toast)
                 //runOnUiThread{echobutton()}
