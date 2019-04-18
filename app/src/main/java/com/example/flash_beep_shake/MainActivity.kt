@@ -2,7 +2,6 @@ package com.example.flash_beep_shake
 
 import android.annotation.TargetApi
 import android.app.Activity
-import android.app.RemoteAction
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothServerSocket
@@ -44,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private var mTextArea: TextView? = null                 //for writing messages to screen
     private var server: AcceptThread? = null                //server object
     private var client:ConnectThread? = null
-
+    var sent = "0"
     private val mReceiver = object : BroadcastReceiver() {
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onReceive(context: Context, intent: Intent) {
@@ -260,7 +259,7 @@ class MainActivity : AppCompatActivity() {
             if (deviceName.length > 3) { //for now, looking for MSU prefix
                 val prefix = deviceName.subSequence(0,3)
                 mTextArea!!.append("Prefix = $prefix\n    ")
-                if (prefix == "mot") {//This is the server
+                if (prefix == "Sam") {//This is the server
                     Log.i(TCLIENT,"Canceling Discovery")
                     mBluetoothAdapter!!.cancelDiscovery()
                     Log.i(TCLIENT,"Connecting")
@@ -287,6 +286,12 @@ class MainActivity : AppCompatActivity() {
     fun echoMsg(msg: String) {
         mTextArea!!.append(msg)
     }
+   /* fun echoToast():Runnable {
+        val toast = Toast.makeText(applicationContext, "Hello Javatpoint", Toast.LENGTH_LONG)
+        return toast
+    }*/
+
+
 
     fun echobutton(): Runnable?  {
         val vibratorService = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -354,15 +359,20 @@ class MainActivity : AppCompatActivity() {
             //val remote: RemoteAction
             val theMessage = "ABC"      //test message: send actual message here
             val msg = theMessage.toByteArray()
+            val sentB = sent.toByteArray()
             try {
                 Log.i(TCLIENT, "Sending the message: [$theMessage]")
-                runOnUiThread{echobutton()}
+                //runOnUiThread{
+                    //fun toast() {
+                        //Toast.makeText( applicationContext,"Hello", Toast.LENGTH_SHORT).show()
+
+                    //}
+                //}
                 //remote = socket.remoteDevice
 
 
                 out = socket.outputStream
-
-                out.write(msg)
+                out.write(sentB)
             } catch (ioe: IOException) {
                 Log.e(TCLIENT, "IOException when opening outputStream\n $ioe")
                 return
@@ -430,6 +440,7 @@ class MainActivity : AppCompatActivity() {
 
         //manage the Server's end of the conversation on the passed-in socket
         fun manageConnectedSocket(socket: BluetoothSocket) {
+            var button1 =
             Log.i(TSERVER, "\nManaging the Socket\n")
             val inSt: InputStream
             val nBytes: Int
@@ -443,11 +454,22 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
+
+
             try {
                 val msgString = msg.toString(Charsets.UTF_8)
+                //val toast = Toast.makeText(applicationContext, "Hello Javatpoint", Toast.LENGTH_LONG)
                 Log.i(TSERVER, "\nServer Received  $nBytes, Bytes:  [$msgString]\n")
                 runOnUiThread { echoMsg("\nReceived $nBytes:  [$msgString]\n") }
-                //runOnUiThread(echobutton())
+
+            if (msgString == "0") {
+                val vibratorService = getSystemService(Context.VIBRATOR_SERVICE ) as Vibrator
+                vibratorService.vibrate(500)
+
+
+            }
+
+                //runOnUiThread(toast)
                 //runOnUiThread{echobutton()}
 
             } catch (uee: UnsupportedEncodingException) {
