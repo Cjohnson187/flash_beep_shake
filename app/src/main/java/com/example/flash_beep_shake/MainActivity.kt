@@ -2,6 +2,7 @@ package com.example.flash_beep_shake
 
 import android.annotation.TargetApi
 import android.app.Activity
+import android.app.RemoteAction
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothServerSocket
@@ -259,7 +260,7 @@ class MainActivity : AppCompatActivity() {
             if (deviceName.length > 3) { //for now, looking for MSU prefix
                 val prefix = deviceName.subSequence(0,3)
                 mTextArea!!.append("Prefix = $prefix\n    ")
-                if (prefix == "MSU") {//This is the server
+                if (prefix == "mot") {//This is the server
                     Log.i(TCLIENT,"Canceling Discovery")
                     mBluetoothAdapter!!.cancelDiscovery()
                     Log.i(TCLIENT,"Connecting")
@@ -287,14 +288,24 @@ class MainActivity : AppCompatActivity() {
         mTextArea!!.append(msg)
     }
 
+    fun echobutton(): Runnable?  {
+        val vibratorService = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val buttonV: Button = this.findViewById(R.id.vibrate)
+        buttonV.setOnClickListener { vibratorService.vibrate(500) }
+        return null
+    }
+
     ////////////////// Client Thread to talk to Server here ///////////////////
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private inner class ConnectThread(mmDevice: BluetoothDevice):Thread(){//from android developer
     private var mmSocket: BluetoothSocket? = null
+    private var mmSocket1: BluetoothSocket? = null
+    private var mmSocket2: BluetoothSocket? = null
 
         init {
+
             // Get a BluetoothSocket to connect with the given BluetoothDevice
             Log.i(TCLIENT, "ConnectThread: init()")
             try {
@@ -340,11 +351,17 @@ class MainActivity : AppCompatActivity() {
         //manage the connection over the passed-in socket
         private fun manageConnectedSocket(socket: BluetoothSocket) {
             val out: OutputStream
+            //val remote: RemoteAction
             val theMessage = "ABC"      //test message: send actual message here
             val msg = theMessage.toByteArray()
             try {
                 Log.i(TCLIENT, "Sending the message: [$theMessage]")
+                runOnUiThread{echobutton()}
+                //remote = socket.remoteDevice
+
+
                 out = socket.outputStream
+
                 out.write(msg)
             } catch (ioe: IOException) {
                 Log.e(TCLIENT, "IOException when opening outputStream\n $ioe")
@@ -430,6 +447,9 @@ class MainActivity : AppCompatActivity() {
                 val msgString = msg.toString(Charsets.UTF_8)
                 Log.i(TSERVER, "\nServer Received  $nBytes, Bytes:  [$msgString]\n")
                 runOnUiThread { echoMsg("\nReceived $nBytes:  [$msgString]\n") }
+                //runOnUiThread(echobutton())
+                //runOnUiThread{echobutton()}
+
             } catch (uee: UnsupportedEncodingException) {
                 Log.e(TSERVER,
                     "UnsupportedEncodingException when converting bytes to String\n $uee")
