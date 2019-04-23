@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity() {
             if (deviceName.length > 3) { //for now, looking for MSU prefix
                 val prefix = deviceName.subSequence(0,3)
                 mTextArea!!.append("Prefix = $prefix\n    ")
-                if (prefix == "Sam") {//This is the server
+                if (prefix == "mot") {//This is the server
                     Log.i(TCLIENT,"Canceling Discovery")
                     mBluetoothAdapter!!.cancelDiscovery()
                     Log.i(TCLIENT,"Connecting")
@@ -423,6 +423,8 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private inner class AcceptThread : Thread() {  //from android developer
         private var mmServerSocket: BluetoothServerSocket? = null
+        var socket: BluetoothSocket? = null
+
 
         init {
             // Use a temporary object that is later assigned to mmServerSocket,
@@ -440,7 +442,7 @@ class MainActivity : AppCompatActivity() {
 
         @RequiresApi(Build.VERSION_CODES.M)
         override fun run() {
-            var socket: BluetoothSocket?
+            //var socket: BluetoothSocket?
             // Keep listening until exception occurs or a socket is returned
             while (true) {
                 Log.i(TSERVER, "AcceptTread.run(): Server Looking for a Connection")
@@ -456,7 +458,7 @@ class MainActivity : AppCompatActivity() {
                 if (socket != null) {
                     Log.i(TSERVER, "Server Thread run(): Connection accepted")
                     // Do work to manage the connection (in a separate thread)
-                    manageConnectedSocket(socket)
+                    manageConnectedSocket(socket!!)
                     break
                 } else {
                     Log.i(TSERVER, "Server Thread run(): The socket is null")
@@ -496,39 +498,29 @@ class MainActivity : AppCompatActivity() {
 
 
                 if (msgString[0].toString() == "1") {
-                    Log.i(TSERVER,msgString  )
+                    Log.i(TSERVER, msgString)
 
-                    val vibratorService = getSystemService(Context.VIBRATOR_SERVICE ) as Vibrator
+                    val vibratorService = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                     vibratorService.vibrate(500)
-                }
-                else if (msgString[0].toString() == "2") {
+                } else if (msgString[0].toString() == "2") {
                     val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
                     val cameraId = cameraManager.getCameraIdList()[0]
                     cameraManager.setTorchMode(cameraId, true)
-                }
-
-                else if (msgString[0].toString() == "3") {
+                } else if (msgString[0].toString() == "3") {
                     val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
                     val cameraId = cameraManager.getCameraIdList()[0]
                     cameraManager.setTorchMode(cameraId, false)
-                }
-
-
-
-                else if (msgString[0].toString() == "4") {
+                } else if (msgString[0].toString() == "4") {
                     val tone = ToneGenerator(AudioManager.STREAM_MUSIC, 50)
-                    tone.startTone(ToneGenerator.TONE_DTMF_C,500)
+                    tone.startTone(ToneGenerator.TONE_DTMF_C, 500)
                 }
+                Thread.sleep(10000)
+                while (msgString[0].toString() != "9") {
+                    run()
+                    //manageConnectedSocket(socket)
+                    }
+                //Thread.sleep(3000)
 
-                else if (msgString[0].toString() == "9") {
-                    cancel()
-                }
-
-
-
-
-                //runOnUiThread(toast)
-                //runOnUiThread{echobutton()}
 
             } catch (uee: UnsupportedEncodingException) {
                 Log.e(TSERVER,
